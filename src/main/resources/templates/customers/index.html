@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Customers Index</title>
+<link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css">
+</head>
+<body>
+
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+		<a class="navbar-brand" href="#">Customers Index</a>
+		<button class="navbar-toggler" type="button" data-toggle="collapse"
+			data-target="#navbarSupportedContent"
+			aria-controls="navbarSupportedContent" aria-expanded="false"
+			aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+	</nav>
+
+	<div class="container">
+		<form class="form-inline mt-4 mb-4">
+			<input class="form-control mr-2" th:value="${param.name}"
+				placeholder="Name" aria-label="Name" name="name"> <select
+				class="form-control mr-2" name="country">
+				<option value="">All</option>
+				<option th:each="country : ${countries}" th:value="${country}"
+					th:text="${country.name}"
+					th:selected="${country.check(param.country)}"></option>
+			</select> <select class="form-control mr-2" name="state">
+				<option value="all">All</option>
+				<option
+					th:selected="${param.state != null && #strings.equals(param.state, 'valid')}"
+					value="valid">Valid</option>
+				<option
+					th:selected="${param.state != null && #strings.equals(param.state, 'invalid')}"
+					value="invalid">Invalid</option>
+			</select>
+			<button class="btn btn-success mr-2" type="submit">Search</button>
+			<button type="button" class="btn btn-primary" onClick="newCustomer()">New</button>
+		</form>
+
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Phone</th>
+					<th>Country</th>
+					<th>Valid</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="customer: ${customers}">
+					<td th:text="${customer.name}"></td>
+					<td th:text="${customer.phone}"></td>
+					<td th:text="${customer.country}"></td>
+					<td th:text="${customer.state == 1 ? 'Yes' : 'No'}"></td>
+					<td>
+						<a class="btn btn-info btn-sm"
+						 th:href="'javascript:edit(' + ${customer.id} + ',\'' + ${customer.name} + '\', \'' + ${customer.phone} + '\', \'' + ${customer.country} + '\')'">Edit</a>
+						<a onClick="return confirm('Are you sure ?');"  class="btn btn-danger btn-sm"
+						 th:href="'/delete/'+${customer.id} + '999999'">Delete</a>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<!-- pagination -->
+		<nav aria-label="Pagination" th:if="${customers.totalPages gt 0}">
+			<ul class="pagination justify-content-center">
+				<li class="page-item"
+					th:classappend="${customers.number eq 0} ? 'disabled'"><a
+					class="page-link"
+					th:href="@{/?name={name}&country={country}&state={state}&page={id}(name=${param.name},country=${param.country},state=${param.state},id=${customers.number lt 2 ? 1 : customers.number})}"
+					aria-label="Previous" title="Previous Page" data-toggle="tooltip">
+						<span aria-hidden="true">&laquo;</span>
+				</a></li>
+				<li class="page-item"
+					th:classappend="${i eq customers.number + 1} ? 'active'"
+					th:each="i : ${#numbers.sequence(customers.number gt 3 ? customers.number -3 : 1, customers.number + 4 lt customers.totalPages ? customers.number + 5 : customers.totalPages, 1)}">
+					<a class="page-link"
+					th:href="@{/?name={name}&country={country}&state={state}&page={id}(name=${param.name},country=${param.country},state=${param.state},id=${i})}"
+					th:text="${i}" th:title="${'Page '+ i}" data-toggle="tooltip"></a>
+				</li>
+				<li class="page-item"
+					th:classappend="${customers.number + 1 eq customers.totalPages} ? 'disabled'">
+					<a class="page-link"
+					th:href="@{/?name={name}&country={country}&state={state}&page={id}(name=${param.name},country=${param.country},state=${param.state},id=${customers.number + 2})}"
+					aria-label="Next" title="Next Page" data-toggle="tooltip"> <span
+						aria-hidden="true">&raquo;</span>
+				</a>
+				</li>
+			</ul>
+		</nav>
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="newCustomer" tabindex="-1" role="dialog"
+		aria-labelledby="newCustomerLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="exampleModalLabel">New Customer</h5>
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<form action="/" id="form-customer" method="post">
+					<div class="modal-body">
+						<input id="idField" type="hidden" name="id">
+						<label for="nameField">Name</label>
+						<input id="nameField"
+							type="text" name="name" placeholder="Name" required
+							class="form-control mb-2"> <label for="countryField">Country</label>
+						<select id="countryField" class="form-control mb-2" name="country" required>
+							<option value="">Select a country</option>
+							<option th:each="country : ${countries}" th:value="${country}"
+								th:text="${country.name}"></option>
+						</select> <label for="phoneField">Phone</label> <input id="phoneField"
+							type="text" name="phone" placeholder="Phone" required
+							class="form-control mb-2">
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary"
+							data-dismiss="modal">Close</button>
+						<button type="submit" class="btn btn-primary">Save</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script src="/webjars/jquery/3.4.1/jquery.min.js"></script>
+	<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+	<script>
+		function edit(id, name, phone, country) {
+			$("#idField").attr('value', id);
+			$("#nameField").attr('value', name);
+			if (phone.indexOf(")") > 0) 
+				$("#phoneField").attr('value', phone.split(")")[1].trim());
+			$("#countryField option[value="+country+"]").attr('selected', true);
+			$("#form-customer").attr("action", "/"+id)
+			$("#newCustomer").modal("show");
+		}
+		
+		function newCustomer() {
+			$("#idField").attr('value', '');
+			$("#nameField").attr('value', '');
+			$("#phoneField").attr('value', '');
+			$("#countryField option:selected").attr('selected', false);
+			$("#form-customer").attr("action", "/")
+			$("#newCustomer").modal("show");
+		}
+	</script>
+</body>
+</html>
